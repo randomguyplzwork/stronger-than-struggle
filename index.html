@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Rise Again – Interactive Story</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700&display=swap" rel="stylesheet">
+<style>
+* { box-sizing:border-box; }
+
+body {
+  margin:0;
+  font-family:'Nunito', sans-serif;
+  background:#0f172a;
+  color:#111827;
+  min-height:100vh;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  padding:16px;
+}
+
+/* Game card */
+#game {
+  width:100%;
+  max-width:850px;
+  background:#f9fafb;
+  border-radius:20px;
+  padding:20px 22px;
+  box-shadow:0 20px 45px rgba(15,23,42,0.45);
+  display:flex;
+  flex-direction:column;
+  gap:16px;
+}
+
+/* Header */
+#header {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  border-bottom:1px solid rgba(148,163,184,0.4);
+  padding-bottom:8px;
+}
+h1 {
+  font-size:1.8rem;
+  margin:0;
+}
+#subtitle {
+  font-size:0.9rem;
+  color:#6b7280;
+}
+
+/* Main layout: image + content side-by-side on desktop */
+#main {
+  display:flex;
+  flex-direction:row;
+  gap:18px;
+}
+
+/* Image panel */
+#image-panel {
+  flex:1.1;
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+}
+#char-img {
+  width:100%;
+  border-radius:16px;
+  object-fit:cover;
+  max-height:280px;
+  box-shadow:0 12px 30px rgba(15,23,42,0.35);
+}
+#char-name {
+  font-weight:700;
+  font-size:1.1rem;
+  text-align:center;
+}
+
+/* Content panel */
+#content-panel {
+  flex:1.4;
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+}
+
+/* Story text */
+#story-box {
+  background:#ffffff;
+  border-radius:14px;
+  padding:12px 14px;
+  border:1px solid rgba(148,163,184,0.4);
+}
+#story {
+  font-size:1rem;
+  line-height:1.5;
+  text-align:left;
+}
+
+/* Stats */
+#stats-box {
+  background:#0f172a;
+  border-radius:14px;
+  padding:10px 12px;
+  color:#e5e7eb;
+  font-size:0.9rem;
+  position:relative;
+}
+#stats-label {
+  font-weight:700;
+  font-size:0.85rem;
+  text-transform:uppercase;
+  letter-spacing:0.06em;
+  margin-bottom:6px;
+  color:#9ca3af;
+}
+.stat-row {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  margin:4px 0;
+  position:relative;
+}
+.stat-name {
+  width:80px;
+}
+.stat-value {
+  font-weight:700;
+  margin-left:8px;
+  width:40px;
+  text-align:right;
+}
+.stat-bar-wrapper {
+  flex:1;
+  margin:0 8px;
+  height:8px;
+  background:#1f2937;
+  border-radius:999px;
+  overflow:hidden;
+}
+.stat-bar-fill {
+  height:100%;
+  border-radius:999px;
+  transition: width 0.5s ease;
+}
+
+/* Colors for bars */
+#hope-bar { background:#22c55e; }
+#stress-bar { background:#ef4444; }
+#motivation-bar { background:#3b82f6; }
+
+/* Delta bubble */
+.stat-delta {
+  position:absolute;
+  right:0;
+  top:-18px;
+  font-size:0.75rem;
+  font-weight:700;
+  opacity:0;
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+.stat-delta.up { color:#22c55e; transform:translateY(-4px); }
+.stat-delta.down { color:#ef4444; transform:translateY(-4px); }
+.stat-delta.show { opacity:1; }
+
+/* Choices */
+#choices {
+  margin-top:4px;
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+}
+.choice-btn {
+  width:100%;
+  padding:10px 12px;
+  font-size:0.98rem;
+  text-align:left;
+  border:none;
+  border-radius:12px;
+  background:#e5e7eb;
+  color:#111827;
+  cursor:pointer;
+  transition:transform 0.16s ease, box-shadow 0.16s ease, background 0.16s ease;
+}
+.choice-btn:hover {
+  background:#d1d5db;
+  box-shadow:0 6px 12px rgba(15,23,42,0.25);
+  transform:translateY(-1px);
+}
+.choice-btn:disabled {
+  opacity:0.55;
+  cursor:default;
+  box-shadow:none;
+  transform:none;
+}
+
+/* End message */
+#end-message {
+  font-size:0.95rem;
+  text-align:center;
+  color:#4b5563;
+  margin-top:4px;
+}
+
+/* Mobile layout */
+@media (max-width: 780px) {
+  #game {
+    padding:16px;
+    border-radius:16px;
+  }
+  #main {
+    flex-direction:column;
+  }
+  h1 { font-size:1.4rem; }
+  #char-img { max-height:220px; }
+}
+</style>
+</head>
+<body>
+<div id="game">
+  <div id="header">
+    <div>
+      <h1>Rise Again – Interactive Story</h1>
+      <div id="subtitle">Your choices shape your friend's hope, stress, and motivation.</div>
+    </div>
+  </div>
+
+  <div id="main">
+    <div id="image-panel">
+      <img id="char-img" src="" alt="Scene image">
+      <div id="char-name"></div>
+    </div>
+
+    <div id="content-panel">
+      <div id="story-box">
+        <div id="story"></div>
+      </div>
+
+      <div id="stats-box">
+        <div id="stats-label">Current status</div>
+
+        <div class="stat-row">
+          <div class="stat-name">Hope</div>
+          <div class="stat-bar-wrapper"><div id="hope-bar" class="stat-bar-fill"></div></div>
+          <div id="hope-value" class="stat-value">0</div>
+        </div>
+
+        <div class="stat-row">
+          <div class="stat-name">Stress</div>
+          <div class="stat-bar-wrapper"><div id="stress-bar" class="stat-bar-fill"></div></div>
+          <div id="stress-value" class="stat-value">0</div>
+        </div>
+
+        <div class="stat-row">
+          <div class="stat-name">Motivation</div>
+          <div class="stat-bar-wrapper"><div id="motivation-bar" class="stat-bar-fill"></div></div>
+          <div id="motivation-value" class="stat-value">0</div>
+        </div>
+      </div>
+
+      <div id="choices"></div>
+      <div id="end-message"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+// --------- GAME STATE ----------
+let state = { hope:10, stress:10, motivation:5, scene:0 };
+const overdoseSceneIndex = 15;
+const recoverySceneIndex = 16;
+const minHope = -5;
+const maxHope = 20;
+const minMotivation = 0;
+const maxMotivation = 20;
+const minStress = -5;
+const maxStress = 20;
+
+// Add delta bubbles
+['hope','stress','motivation'].forEach(id=>{
+  const row = document.getElementById(id+'-value').parentNode;
+  const bubble = document.createElement('div');
+  bubble.className = 'stat-delta';
+  row.appendChild(bubble);
+});
+
+// --------- SCENES ----------
+const scenes = [
+  {character:"stressed.jpg", name:"Your Friend", text:"Your friend is sitting alone, shoulders tense, looking completely overwhelmed."},
+  {character:"stressed.jpg", name:"Your Friend", text:"They start to open up, but their voice shakes and they avoid eye contact."},
+  {character:"randompeople.jpg", name:"Supportive Crowd", text:"You bring your friend to a small, kind group that welcomes them in."},
+  {character:"yes.jpg", name:"Mentor", text:"A mentor looks your friend in the eye and says, “Yes, you can do this. You matter.”"},
+  {character:"therapy.jpg", name:"Therapy Session", text:"Your friend takes a deep breath and sits down in a therapy room for the first time."},
+  {character:"phonecall.jpg", name:"Phone Call", text:"Later, you make a call to a support line to check what else you can do to help."},
+  {character:"happy.jpg", name:"Your Friend", text:"For the first time in a while, your friend smiles and it feels real."},
+  {character:"group.jpg", name:"Support Group", text:"The group talks about taking things one day at a time and not having to be perfect."},
+  {character:"stressed.jpg", name:"Your Friend", text:"A rough day hits hard, and your friend feels the weight of everything again."},
+  {character:"happy.jpg", name:"Your Friend", text:"Slowly, they start to trust the process and feel a little more confident each day."},
+  {character:"randompeople.jpg", name:"Supportive Crowd", text:"Your friend begins supporting new people who are just starting their journey."},
+  {character:"happy.jpg", name:"Your Friend", text:"They’ve built new friendships and are starting to feel more stable."},
+  {character:"stressed.jpg", name:"Your Friend", text:"Life throws new challenges at them. Old feelings try to come back."},
+  {character:"group.jpg", name:"Support Group", text:"Stress grows, and your friend starts slipping into some old habits."},
+  {character:"happy.jpg", name:"Recovery", text:"Through help, care, and persistence, your friend begins to feel hope again."},
+  {character:"pill.jpg", name:"Critical Moment", text:"Your friend has overdosed. This is an emergency — they need immediate help."},
+  {character:"resting.jpg", name:"Resting in Hospital", text:"Your friend lies in a hospital bed, resting while the medical team watches closely."},
+  {character:"911.jpg", name:"Emergency Response", text:"Emergency services arrive quickly. You did the right thing by calling for help."}
+];
+
+// --------- CHOICES ----------
+const baseChoiceTexts = [
+  "Sit beside them quietly and let them know you’re staying.",
+  "Ask gently how they’re feeling right now.",
+  "Change the subject completely to avoid talking about it.",
+  "Listen without interrupting and validate their emotions.",
+  "Suggest taking a short walk to clear their mind.",
+  "Remind them of a time they handled something difficult.",
+  "Tell them they don’t have to explain everything today.",
+  "Play calming music and stay nearby.",
+  "Help them list one small thing they did well lately.",
+  "Encourage them to text someone they trust.",
+  "Do a short breathing exercise together.",
+  "Offer to help with one stressful task.",
+  "Ask what they need from you today.",
+  "Tell them setbacks are normal in recovery.",
+  "Talk about a future plan in very small steps.",
+  "Encourage them to drink some water and rest.",
+  "Invite them to join a group activity if they want.",
+  "Let them know it’s okay to cry or be upset.",
+  "Share a hopeful story of someone who got better.",
+  "Offer a light joke to ease a bit of tension.",
+  "Suggest writing or drawing what they feel.",
+  "Remind them that they are not a burden.",
+  "Help them think of one reason to keep going.",
+  "Check in about their coping tools from therapy.",
+  "Respect their boundaries and don’t force talking.",
+  "Offer to stay on call or chat later tonight.",
+  "Gently encourage professional help if needed.",
+  "Help them plan one kind action for themselves.",
+  "Dismiss their feelings and say they’re overreacting.",
+  "Tell them it’s hopeless and nothing will change."
+];
+
+// Scene pools
+function generateScenePool(sceneIndex){
+  const pool=[];
+  for(let i=0;i<30;i++){
+    const text=baseChoiceTexts[i];
+    let hope=Math.floor(Math.random()*5)-2;
+    let stress=Math.floor(Math.random()*5)-2;
+    let motivation=Math.floor(Math.random()*5)-2;
+    if(i>=28){ hope=-3; stress=3; motivation=-3; }
+    pool.push({text, hope, stress, motivation});
+  }
+  return pool;
+}
+const scenePools=[];
+for(let s=0;s<18;s++){ scenePools.push(generateScenePool(s)); }
+
+// Random choice selection
+function getRandomChoices(sceneIndex){
+  const pool=scenePools[sceneIndex];
+  const badChoices=pool.filter(c=>c.hope<0&&c.stress>0&&c.motivation<0);
+  const normalChoices=pool.filter(c=>!(c.hope<0&&c.stress>0&&c.motivation<0));
+  const choices=[];
+  const bad1=badChoices[Math.floor(Math.random()*badChoices.length)];
+  choices.push(bad1);
+  if(Math.random()<0.09 && badChoices.length>1){
+    let bad2;
+    do{ bad2=badChoices[Math.floor(Math.random()*badChoices.length)]; }while(bad2===bad1);
+    choices.push(bad2);
+  }
+  while(choices.length<3){
+    const n=normalChoices[Math.floor(Math.random()*normalChoices.length)];
+    if(!choices.includes(n)) choices.push(n);
+  }
+  for(let i=choices.length-1;i>0;i--){
+    const j=Math.floor(Math.random()*(i+1));
+    [choices[i],choices[j]]=[choices[j],choices[i]];
+  }
+  return choices;
+}
+
+// --------- UI UPDATE ----------
+function updateBars(prevState){
+  const hPct=Math.max(0,Math.min(100,(state.hope-minHope)/(maxHope-minHope)*100));
+  const sPct=Math.max(0,Math.min(100,(state.stress-minStress)/(maxStress-minStress)*100));
+  const mPct=Math.max(0,Math.min(100,(state.motivation-minMotivation)/(maxMotivation-minMotivation)*100));
+
+  const hopeBar=document.getElementById('hope-bar');
+  const stressBar=document.getElementById('stress-bar');
+  const motivationBar=document.getElementById('motivation-bar');
+
+  if(prevState){
+    animateBar(hopeBar, prevState.hope, state.hope, minHope, maxHope);
+    animateBar(stressBar, prevState.stress, state.stress, minStress, maxStress);
+    animateBar(motivationBar, prevState.motivation, state.motivation, minMotivation, maxMotivation);
+
+    showDelta('hope', state.hope-prevState.hope);
+    showDelta('stress', state.stress-prevState.stress);
+    showDelta('motivation', state.motivation-prevState.motivation);
+  }else{
+    hopeBar.style.width=hPct+'%';
+    stressBar.style.width=sPct+'%';
+    motivationBar.style.width=mPct+'%';
+  }
+
+  document.getElementById('hope-value').textContent=state.hope;
+  document.getElementById('stress-value').textContent=state.stress;
+  document.getElementById('motivation-value').textContent=state.motivation;
+}
+
+function animateBar(bar, fromVal, toVal, min, max){
+  const startPct=Math.max(0,Math.min(100,(fromVal-min)/(max-min)*100));
+  const endPct=Math.max(0,Math.min(100,(toVal-min)/(max-min)*100));
+  bar.style.width=endPct+'%';
+}
+
+function showDelta(statId, delta){
+  if(delta===0) return;
+  const row=document.getElementById(statId+'-value').parentNode;
+  const bubble=row.querySelector('.stat-delta');
+  bubble.textContent=delta;
+  bubble.className='stat-delta '+(delta>0?'up':'down')+' show';
+  setTimeout(()=>{ bubble.classList.remove('show'); },700);
+}
+
+function updateUI(prevState){
+  const scene=scenes[state.scene>=scenes.length?scenes.length-1:state.scene];
+  document.getElementById('char-img').src="images/"+scene.character;
+  document.getElementById('char-img').alt=scene.name;
+  document.getElementById('char-name').textContent=scene.name;
+  document.getElementById('story').textContent=scene.text;
+
+  updateBars(prevState);
+
+  const choiceArea=document.getElementById('choices');
+  const endMsg=document.getElementById('end-message');
+  choiceArea.innerHTML=''; endMsg.textContent='';
+
+  if(state.scene===overdoseSceneIndex){
+    endMsg.textContent="This situation is life-threatening. In real life, call emergency services immediately.";
+    const btn=document.createElement('button');
+    btn.className='choice-btn';
+    btn.textContent='Play Again';
+    btn.style.background='#ef4444';
+    btn.style.color='#fff';
+    btn.onclick=()=>{ state={hope:10,stress:10,motivation:5,scene:0}; updateUI(null); };
+    choiceArea.appendChild(btn);
+    return;
+  }
+
+  if(state.scene===recoverySceneIndex){
+    endMsg.textContent="Recovery isn’t a straight line. Support and action help someone slowly rise again.";
+    return;
+  }
+
+  const choices=getRandomChoices(state.scene);
+  choices.forEach(choice=>{
+    const btn=document.createElement('button');
+    btn.className='choice-btn';
+    btn.textContent=choice.text;
+    btn.onclick=()=>{
+      document.querySelectorAll('.choice-btn').forEach(b=>b.disabled=true);
+      selectChoice(choice);
+    };
+    choiceArea.appendChild(btn);
+  });
+}
+
+// --------- CHOICE HANDLER ----------
+function selectChoice(choice){
+  const prev={...state};
+  state.hope+=choice.hope;
+  state.stress+=choice.stress;
+  state.motivation+=choice.motivation;
+
+  state.hope=Math.max(minHope,Math.min(maxHope,state.hope));
+  state.stress=Math.max(minStress,Math.min(maxStress,state.stress));
+  state.motivation=Math.max(minMotivation,Math.min(maxMotivation,state.motivation));
+
+  if(state.stress>=maxStress||state.hope<=0){ state.scene=overdoseSceneIndex; }
+  else{ state.scene++; }
+
+  updateUI(prev);
+}
+
+// init
+updateUI();
+</script>
+</body>
+</html>
